@@ -56,7 +56,12 @@
     },
     "browser_specific_settings": {
       "gecko": {
-        "id": "ademking@md-this-page"
+        "id": "ademking@md-this-page",
+        "data_collection_permissions": {
+          "required": [
+            "none"
+          ]
+        }
       }
     }
   }
