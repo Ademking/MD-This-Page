@@ -322,6 +322,9 @@ export default function MarkdownPage() {
 
         finalMd += baseMd
 
+        // Clean up any excessively consecutive empty lines created by options processing
+        finalMd = finalMd.replace(/\n{3,}/g, "\n\n").trim()
+
         setMarkdown(finalMd)
     }, [pageData, toggles])
 
