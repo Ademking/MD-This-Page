@@ -38,6 +38,10 @@ HTML pages include navigation bars, scripts, ads, and deeply nested DOM structur
   - Download as a `.md` file
   - Copy as a prompt (useful for AI workflows)
 
+## Try it out!
+
+You can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, simply right-click on any webpage and select ".MD this page" to see the magic happen.
+
 ## Getting Started
 
 This extension is built with [Plasmo](https://docs.plasmo.com/) and React.
