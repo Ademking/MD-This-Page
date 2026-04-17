@@ -53,6 +53,11 @@
         },
         "description": "Convert current page to Markdown"
       }
+    },
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "ademking@md-this-page"
+      }
     }
   }
 }
