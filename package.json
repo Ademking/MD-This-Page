@@ -6,8 +6,14 @@
   "author": "Adem Kouki <ademkingnew@gmail.com>",
   "scripts": {
     "dev": "plasmo dev",
+    "dev:verbose": "plasmo dev --verbose",
+    "dev:firefox": "plasmo dev --target=firefox-mv3",
     "build": "plasmo build",
-    "package": "plasmo package"
+    "build:source": "plasmo build --source-maps",
+    "build:chrome": "plasmo build --target=chrome-mv3 --zip",
+    "build:firefox": "plasmo build --target=firefox-mv3 --zip --source-maps",
+    "package": "plasmo package",
+    "build:all": "pnpm run build:chrome && pnpm run build:firefox"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
