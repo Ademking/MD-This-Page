@@ -92,7 +92,11 @@ function convertPageToMarkdown() {
 
   let baseMd = turndownService.turndown(htmlToConvert)
 
+  // Remove lines that contain only a solitary dash or middle dot (possibly with spaces)
+  baseMd = baseMd.replace(/^[ \t]*[-·][ \t]*$/gm, "")
+
   // Clean up excess whitespace: more than 2 consecutive newlines should become exactly 2
+  baseMd = baseMd.replace(/^[ \t]+$/gm, "")
   baseMd = baseMd.replace(/\n{3,}/g, "\n\n").trim()
 
   const pageData = {

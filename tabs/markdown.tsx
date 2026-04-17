@@ -322,7 +322,11 @@ export default function MarkdownPage() {
 
         finalMd += baseMd
 
-        // Clean up any excessively consecutive empty lines created by options processing
+        // Remove lines that contain only a solitary dash or middle dot (possibly with spaces)
+        finalMd = finalMd.replace(/^[ \t]*[-·][ \t]*$/gm, "")
+
+        // Clean up any spaces on blank lines, then collapse 3+ newlines into 2
+        finalMd = finalMd.replace(/^[ \t]+$/gm, "")
         finalMd = finalMd.replace(/\n{3,}/g, "\n\n").trim()
 
         setMarkdown(finalMd)
