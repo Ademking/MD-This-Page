@@ -42,6 +42,10 @@ HTML pages include navigation bars, scripts, ads, and deeply nested DOM structur
 
 You can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, simply right-click on any webpage and select ".MD this page" to see the magic happen.
 
+
+![](https://github.com/user-attachments/assets/d30077c5-9f35-4534-8260-1cbfc86baec8)
+
+
 ## Getting Started
 
 This extension is built with [Plasmo](https://docs.plasmo.com/) and React.
