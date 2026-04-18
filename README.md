@@ -4,6 +4,8 @@ Convert any web page to clean, readable Markdown with just one click.
 
 ![](screenshot.png)
 
+<a href="https://www.producthunt.com/products/md-this-page?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-md-this-page" target="_blank" rel="noopener noreferrer"><img alt=".MD This Page - Convert any page to clean Markdown instantly | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1125963&amp;theme=light&amp;t=1776527830699"></a>
+
 **.MD this page** is a browser extension that extracts the main content of an article or webpage, removes clutter, and converts it into well-formatted Markdown.
 
 ## Why Markdown (and why it matters for LLMs)
