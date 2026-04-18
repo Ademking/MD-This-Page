@@ -45,7 +45,8 @@ HTML pages include navigation bars, scripts, ads, and deeply nested DOM structur
 You can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, simply right-click on any webpage and select ".MD this page" to see the magic happen.
 
 
-![](https://github.com/user-attachments/assets/d30077c5-9f35-4534-8260-1cbfc86baec8)
+<img width="1919" height="1046" alt="image" src="https://github.com/user-attachments/assets/73351a35-bdd2-478d-8b5e-d57bdf9de12f" />
+
 
 
 ## Getting Started
