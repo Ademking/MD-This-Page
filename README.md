@@ -4,7 +4,33 @@ Convert any web page to clean, readable Markdown with just one click.
 
 ![](screenshot.png)
 
-<a href="https://www.producthunt.com/products/md-this-page?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-md-this-page" target="_blank" rel="noopener noreferrer"><img alt=".MD This Page - Convert any page to clean Markdown instantly | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1125963&amp;theme=light&amp;t=1776527830699"></a>
+<div align="center">
+            <img src="https://img.shields.io/github/release/Ademking/MD-This-Page?style=for-the-badge&sort=semver">
+            <img src="https://img.shields.io/github/stars/Ademking/MD-This-Page?style=for-the-badge&sort=semver">
+            <img src="https://img.shields.io/chrome-web-store/rating/banfcmclfmmlbkhionmemhibbjedhikm?style=for-the-badge">
+</div>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <a href="https://chromewebstore.google.com/detail/md-this-page/banfcmclfmmlbkhionmemhibbjedhikm">
+        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/download-chrome.svg">
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://addons.mozilla.org/en-US/firefox/addon/md-this-page/">
+        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/firefox.svg">
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://www.producthunt.com/products/md-this-page?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-md-this-page" target="_blank" rel="noopener noreferrer">
+        <img alt=".MD This Page" width="250" height="54"
+        src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1125963&theme=light&t=1776527830699">
+      </a>
+    </td>
+  </tr>
+</table>
+
 
 **.MD this page** is a browser extension that extracts the main content of an article or webpage, removes clutter, and converts it into well-formatted Markdown.
 
@@ -42,7 +68,22 @@ HTML pages include navigation bars, scripts, ads, and deeply nested DOM structur
 
 ## Try it out!
 
-You can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, simply right-click on any webpage and select ".MD this page" to see the magic happen.
+<table align="center">
+  <tr>
+    <td align="center">
+      <a href="https://chromewebstore.google.com/detail/md-this-page/banfcmclfmmlbkhionmemhibbjedhikm">
+        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/download-chrome.svg">
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://addons.mozilla.org/en-US/firefox/addon/md-this-page/">
+        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/firefox.svg">
+      </a>
+    </td>
+  </tr>
+</table>
+
+Or you can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, simply right-click on any webpage and select ".MD this page" to see the magic happen.
 
 
 <img width="1919" height="1046" alt="image" src="https://github.com/user-attachments/assets/73351a35-bdd2-478d-8b5e-d57bdf9de12f" />
