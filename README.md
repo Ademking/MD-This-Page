@@ -1,38 +1,32 @@
 # .MD this page
 
-Convert any web page to clean, readable Markdown with just one click.
+> Turn any webpage into clean, LLM-ready Markdown in one click.  
+> Strip the browser, keep the structure, then copy or download instantly.
 
 ![](screenshot.png)
 
 <div align="center">
-            <img src="https://img.shields.io/github/release/Ademking/MD-This-Page?style=for-the-badge&sort=semver">
-            <img src="https://img.shields.io/github/stars/Ademking/MD-This-Page?style=for-the-badge&sort=semver">
-            <img src="https://img.shields.io/chrome-web-store/rating/banfcmclfmmlbkhionmemhibbjedhikm?style=for-the-badge">
+  <a href="https://chromewebstore.google.com/detail/md-this-page/banfcmclfmmlbkhionmemhibbjedhikm">
+    <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/download-chrome.svg">
+  </a>
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/md-this-page/">
+    <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/firefox.svg">
+  </a>
 </div>
 
-<table align="center">
-  <tr>
-    <td align="center">
-      <a href="https://chromewebstore.google.com/detail/md-this-page/banfcmclfmmlbkhionmemhibbjedhikm">
-        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/download-chrome.svg">
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://addons.mozilla.org/en-US/firefox/addon/md-this-page/">
-        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/firefox.svg">
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://www.producthunt.com/products/md-this-page?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-md-this-page" target="_blank" rel="noopener noreferrer">
-        <img alt=".MD This Page" width="250" height="54"
-        src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1125963&theme=light&t=1776527830699">
-      </a>
-    </td>
-  </tr>
-</table>
+<br/>
 
+<div align="center">
+  <img src="https://img.shields.io/github/release/Ademking/MD-This-Page?style=for-the-badge&sort=semver">
+  <img src="https://img.shields.io/github/stars/Ademking/MD-This-Page?style=for-the-badge&sort=semver">
+  <img src="https://img.shields.io/chrome-web-store/rating/banfcmclfmmlbkhionmemhibbjedhikm?style=for-the-badge">
+</div>
 
-**.MD this page** is a browser extension that extracts the main content of an article or webpage, removes clutter, and converts it into well-formatted Markdown.
+### How it works
+
+1. Open any webpage  
+2. Right-click → ".MD this page" (or press `Alt+M`)  
+3. Get clean Markdown instantly  
 
 ## Why Markdown (and why it matters for LLMs)
 
