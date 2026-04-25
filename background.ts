@@ -40,6 +40,13 @@ chrome.commands.onCommand.addListener((command, tab) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "open-markdown-tab") {
     // Open the new tab page provided by Plasmo
-    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/markdown.html") })
+    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/markdown.html") }, (newTab) => {
+      if (chrome.runtime.lastError) {
+        console.error("Failed to open markdown tab:", chrome.runtime.lastError.message)
+      }
+    })
+    // Return false since we don't use sendResponse asynchronously
+    return false
   }
+  return false
 })
