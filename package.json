@@ -40,11 +40,9 @@
   },
   "manifest": {
     "permissions": [
+      "activeTab",
       "contextMenus",
       "storage"
-    ],
-    "host_permissions": [
-      "https://*/*"
     ],
     "commands": {
       "convert-to-markdown": {
