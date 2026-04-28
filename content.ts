@@ -1,4 +1,4 @@
-import { isProbablyReaderable, Readability } from "@mozilla/readability"
+import Defuddle from "defuddle"
 import TurndownService from "turndown"
 // @ts-ignore
 import { gfm } from "turndown-plugin-gfm"
@@ -6,10 +6,8 @@ import { gfm } from "turndown-plugin-gfm"
 export {}
 
 function convertPageToMarkdown() {
-  // Clone the document so Readability doesn't mutate the original DOM
   const documentClone = document.cloneNode(true) as Document
 
-  // Clean up common bad elements before Readability or Turndown processes them
   const badSelectors = [
     ".infobox",
     ".mw-editsection",
@@ -25,12 +23,10 @@ function convertPageToMarkdown() {
 
   let article: any = null
   try {
-    if (isProbablyReaderable(documentClone)) {
-      const reader = new Readability(documentClone)
-      article = reader.parse()
-    }
+    const defuddle = new Defuddle(documentClone, { url: window.location.href })
+    article = defuddle.parse()
   } catch (error) {
-    console.warn("Readability failed to parse this page:", error)
+    console.warn("Defuddle failed to parse this page:", error)
   }
 
   const turndownService = new TurndownService({
@@ -74,11 +70,50 @@ function convertPageToMarkdown() {
     }
   })
 
-  // Fallback to the main generic wrapper if Readability isn't suitable or fails
-  let htmlToConvert = ""
-  if (article && article.content) {
-    htmlToConvert = article.content
+  // Use Defuddle content HTML, convert with Turndown
+  let baseMd = ""
+  if (article?.content) {
+    baseMd = turndownService.turndown(article.content)
   } else {
+    const turndownService = new TurndownService({
+      headingStyle: "atx",
+      hr: "---",
+      bulletListMarker: "-",
+      codeBlockStyle: "fenced"
+    })
+    turndownService.use(gfm)
+
+    turndownService.remove([
+      "script",
+      "style",
+      "noscript",
+      "header",
+      "footer",
+      "nav",
+      "aside",
+      "svg",
+      "iframe",
+      "canvas",
+      "form",
+      "button",
+      "dialog"
+    ])
+
+    turndownService.addRule("ignoreBase64Images", {
+      filter: function (node, options) {
+        if (node.nodeName === "IMG") {
+          const src = node.getAttribute("src") || ""
+          if (src.startsWith("data:image")) {
+            return true
+          }
+        }
+        return false
+      },
+      replacement: function () {
+        return ""
+      }
+    })
+
     const mainEl =
       document.querySelector("main") ||
       document.querySelector('[role="main"]') ||
@@ -87,10 +122,9 @@ function convertPageToMarkdown() {
       document.querySelector("#content") ||
       document.querySelector(".content") ||
       document.body
-    htmlToConvert = mainEl.innerHTML
+    const htmlToConvert = mainEl.innerHTML
+    baseMd = turndownService.turndown(htmlToConvert)
   }
-
-  let baseMd = turndownService.turndown(htmlToConvert)
 
   // Remove lines that contain only a solitary dash or middle dot (possibly with spaces)
   baseMd = baseMd.replace(/^[ \t]*[-·][ \t]*$/gm, "")
@@ -102,8 +136,8 @@ function convertPageToMarkdown() {
   const pageData = {
     markdown: baseMd,
     title: article?.title || document.title || "",
-    author: article?.byline || "",
-    date: article?.publishedTime || "",
+    author: article?.author || "",
+    date: article?.datePublished || "",
     url: window.location.href || ""
   }
 
