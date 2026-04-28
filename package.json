@@ -16,13 +16,12 @@
     "build:all": "pnpm run build:chrome && pnpm run build:firefox"
   },
   "dependencies": {
+    "defuddle-js": "^0.1.0",
     "defuddle": "^0.13.0",
     "markdown-to-jsx": "^9.7.15",
     "plasmo": "0.90.3",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "turndown": "^7.2.4",
-    "turndown-plugin-gfm": "^1.0.2"
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "4.1.1",
