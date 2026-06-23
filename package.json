@@ -40,7 +40,8 @@
     "permissions": [
       "activeTab",
       "contextMenus",
-      "storage"
+      "storage",
+      "tabs"
     ],
     "commands": {
       "convert-to-markdown": {
