@@ -41,7 +41,7 @@
       "activeTab",
       "contextMenus",
       "storage",
-      "downloads"
+      "clipboardWrite"
     ],
     "commands": {
       "convert-to-markdown": {

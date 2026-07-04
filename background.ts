@@ -85,7 +85,7 @@ async function runQuickAction(tabId: number, action: QuickAction) {
     const markdown = formatMarkdown(pageData, settings.format)
 
     if (action === "download") {
-      await downloadMarkdown(markdown, pageData.title)
+      await downloadMarkdown(tabId, markdown, pageData.title)
     } else {
       await copyToClipboard(
         tabId,
@@ -99,17 +99,30 @@ async function runQuickAction(tabId: number, action: QuickAction) {
   }
 }
 
-async function downloadMarkdown(markdown: string, title: string) {
+async function downloadMarkdown(tabId: number, markdown: string, title: string) {
+  // Triggered from the tab's own content script rather than
+  // chrome.downloads.download() with a data: URL: Firefox rejects data:
+  // URLs requested by a background script with "Access denied", even though
+  // Chrome allows it. A plain Blob + <a download> in the page works
+  // identically in both browsers and needs no "downloads" permission.
   const filename = `${(title || "page").replace(/[\\/:*?"<>|]+/g, "_").trim() || "page"}.md`
-  const dataUrl =
-    "data:text/markdown;charset=utf-8," + encodeURIComponent(markdown)
-  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false })
+  const response = (await chrome.tabs.sendMessage(tabId, {
+    action: "download-markdown",
+    markdown,
+    filename
+  })) as { success: boolean; error?: string } | undefined
+  if (!response?.success) {
+    throw new Error(response?.error || "Download failed")
+  }
 }
 
 async function copyToClipboard(tabId: number, text: string) {
   // Written from the tab's own content script, not a background offscreen
   // document: an offscreen document never has focus, and Chrome's Clipboard
   // API refuses to write from an unfocused document (verified in Brave).
+  // The "clipboardWrite" manifest permission is what lets this succeed in
+  // Firefox too, where a write triggered by a cross-context message is
+  // otherwise rejected for lacking "user activation" (verified in Firefox).
   const response = (await chrome.tabs.sendMessage(tabId, {
     action: "copy-to-clipboard",
     text
