@@ -41,8 +41,7 @@
       "activeTab",
       "contextMenus",
       "storage",
-      "downloads",
-      "offscreen"
+      "downloads"
     ],
     "commands": {
       "convert-to-markdown": {

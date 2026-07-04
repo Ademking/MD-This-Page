@@ -6,7 +6,7 @@ export {}
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "convert-to-markdown",
-    title: ".MD this page",
+    title: "Open Preview Tab",
     contexts: ["page", "action"]
   })
   chrome.contextMenus.create({
@@ -88,6 +88,7 @@ async function runQuickAction(tabId: number, action: QuickAction) {
       await downloadMarkdown(markdown, pageData.title)
     } else {
       await copyToClipboard(
+        tabId,
         action === "copyPrompt" ? asPrompt(markdown) : markdown
       )
     }
@@ -105,34 +106,14 @@ async function downloadMarkdown(markdown: string, title: string) {
   await chrome.downloads.download({ url: dataUrl, filename, saveAs: false })
 }
 
-let creatingOffscreen: Promise<void> | null = null
-
-async function ensureOffscreenDocument() {
-  if (!chrome.offscreen) {
-    throw new Error(
-      "Clipboard quick actions require the chrome.offscreen API, which this browser doesn't support."
-    )
-  }
-  if (await chrome.offscreen.hasDocument()) return
-
-  if (!creatingOffscreen) {
-    creatingOffscreen = chrome.offscreen.createDocument({
-      url: chrome.runtime.getURL("tabs/offscreen.html"),
-      reasons: [chrome.offscreen.Reason.CLIPBOARD],
-      justification: "Write extracted markdown to the clipboard"
-    })
-  }
-  await creatingOffscreen
-  creatingOffscreen = null
-}
-
-async function copyToClipboard(text: string) {
-  await ensureOffscreenDocument()
-  const response = await chrome.runtime.sendMessage({
-    target: "offscreen",
+async function copyToClipboard(tabId: number, text: string) {
+  // Written from the tab's own content script, not a background offscreen
+  // document: an offscreen document never has focus, and Chrome's Clipboard
+  // API refuses to write from an unfocused document (verified in Brave).
+  const response = (await chrome.tabs.sendMessage(tabId, {
     action: "copy-to-clipboard",
     text
-  })
+  })) as { success: boolean; error?: string } | undefined
   if (!response?.success) {
     throw new Error(response?.error || "Clipboard write failed")
   }

@@ -45,5 +45,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     convertPageToMarkdown()
   } else if (request.action === "extract-page-data") {
     sendResponse(extractPageData())
+  } else if (request.action === "copy-to-clipboard") {
+    // Done here rather than from a background offscreen document: an
+    // offscreen document never has focus, so navigator.clipboard.writeText()
+    // always throws NotAllowedError there. The page's own document does
+    // have focus when the user triggers this via the context menu or the
+    // toolbar icon, so the write succeeds here.
+    navigator.clipboard
+      .writeText(request.text ?? "")
+      .then(() => sendResponse({ success: true }))
+      .catch((err) =>
+        sendResponse({ success: false, error: `${err.name}: ${err.message}` })
+      )
+    return true
   }
 })
