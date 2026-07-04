@@ -40,7 +40,9 @@
     "permissions": [
       "activeTab",
       "contextMenus",
-      "storage"
+      "storage",
+      "downloads",
+      "offscreen"
     ],
     "commands": {
       "convert-to-markdown": {

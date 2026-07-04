@@ -1,11 +1,12 @@
 import { Defuddle } from "defuddle-js"
 
+import type { PageData } from "~lib/format"
+
 export {}
 
-function convertPageToMarkdown() {
+function extractPageData(): PageData {
   let article: any = null
   try {
-    const parser = new DOMParser()
     const html = document.documentElement.outerHTML
     article = Defuddle.parse(html, { url: window.location.href })
   } catch (error) {
@@ -19,13 +20,17 @@ function convertPageToMarkdown() {
     baseMd = article.content
   }
 
-  const pageData = {
+  return {
     markdown: baseMd,
     title: article?.title || document.title || "",
     author: article?.author || "",
     date: article?.datePublished || "",
     url: window.location.href || ""
   }
+}
+
+function convertPageToMarkdown() {
+  const pageData = extractPageData()
 
   chrome.storage.local.set({ pageData }, () => {
     if (chrome.runtime.lastError) {
@@ -38,5 +43,7 @@ function convertPageToMarkdown() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "convert-to-markdown") {
     convertPageToMarkdown()
+  } else if (request.action === "extract-page-data") {
+    sendResponse(extractPageData())
   }
 })
