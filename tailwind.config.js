@@ -2,7 +2,7 @@
 module.exports = {
   mode: "jit",
   darkMode: "class",
-  content: ["./**/*.tsx"],
+  content: ["./tabs/**/*.tsx"],
   plugins: [
     require('@tailwindcss/typography')
   ],

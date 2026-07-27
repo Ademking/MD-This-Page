@@ -29,7 +29,8 @@ chrome.commands.onCommand.addListener((command, tab) => {
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "open-markdown-tab") {
-    // Open the new tab page
-    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/markdown.html") })
+    chrome.storage.local.set({ pageData: request.pageData || null }, () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL("tabs/markdown.html") })
+    })
   }
 })
