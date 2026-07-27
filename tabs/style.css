@@ -31,6 +31,11 @@ html {
   border: 3px solid #1e1e1e; /* Creates padding effect around thumb */
 }
 
+/* KaTeX overrides for dark theme */
+.katex { color: #e4e4e7; }
+.katex-display { margin: 1em 0; padding: 0.75em 0; overflow-x: auto; }
+.katex-display > .katex { text-align: left; margin-left: 1em; }
+
 /* Thumb on hover */
 ::-webkit-scrollbar-thumb:hover {
   background-color: #5a5a5a; /* Slightly lighter when hovering */

@@ -4,6 +4,8 @@ export interface PageData {
   author: string
   date: string
   url: string
+  domain?: string
+  raw?: any
 }
 
 export interface FormatSettings {

@@ -64,7 +64,9 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "open-markdown-tab") {
-    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/markdown.html") })
+    chrome.storage.local.set({ pageData: request.pageData || null }, () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL("tabs/markdown.html") })
+    })
   }
 })
 

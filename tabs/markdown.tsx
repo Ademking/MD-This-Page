@@ -1,6 +1,8 @@
+import { useEffect, useMemo, useRef, useState } from "react"
 import Markdown from "markdown-to-jsx"
-import { useEffect, useRef, useState } from "react"
-import TurndownService from "turndown"
+import katex from "katex"
+
+import "katex/dist/katex.min.css"
 
 import { formatMarkdown } from "~lib/format"
 import { getSettings } from "~lib/settings"
@@ -172,6 +174,171 @@ const MapIcon = (props) => (
     </svg>
 )
 
+function preprocessLatex(markdown: string): string {
+    let result = ""
+    let i = 0
+    const len = markdown.length
+
+    while (i < len) {
+        // Wikipedia-style: {\displaystyle ...}
+        if (markdown.slice(i, i + 14) === "{\\displaystyle") {
+            let openIndex = i + 14
+            while (openIndex < len && /\s/.test(markdown[openIndex])) {
+                openIndex++
+            }
+
+            if (markdown[openIndex] === "{") {
+                let depth = 0
+                let endIndex = -1
+
+                for (let idx = openIndex; idx < len; idx++) {
+                    const char = markdown[idx]
+                    if (char === "\\") {
+                        idx++
+                        continue
+                    }
+                    if (char === "{") {
+                        depth++
+                    } else if (char === "}") {
+                        depth--
+                        if (depth === 0) {
+                            endIndex = idx
+                            break
+                        }
+                    }
+                }
+
+                if (endIndex !== -1) {
+                    const latexBody = markdown.slice(openIndex + 1, endIndex).trim()
+                    result += `$$${latexBody}$$`
+                    i = endIndex + 1
+                    continue
+                }
+            }
+        }
+
+        result += markdown[i]
+        i++
+    }
+
+    return result
+}
+
+interface MathSegment {
+    type: "text" | "math"
+    content: string
+    displayMode: boolean
+}
+
+function splitMathSegments(markdown: string): MathSegment[] {
+    const segments: MathSegment[] = []
+    let i = 0
+    let currentText = ""
+    const len = markdown.length
+
+    while (i < len) {
+        // Display math: $$...$$
+        if (i + 1 < len && markdown[i] === "$" && markdown[i + 1] === "$") {
+            if (currentText) {
+                segments.push({ type: "text", content: currentText, displayMode: false })
+                currentText = ""
+            }
+            const end = markdown.indexOf("$$", i + 2)
+            if (end !== -1) {
+                segments.push({
+                    type: "math",
+                    content: markdown.slice(i + 2, end).trim(),
+                    displayMode: true
+                })
+                i = end + 2
+                continue
+            }
+        }
+
+        // Inline math: \(...\)
+        if (i + 1 < len && markdown[i] === "\\" && markdown[i + 1] === "(") {
+            if (currentText) {
+                segments.push({ type: "text", content: currentText, displayMode: false })
+                currentText = ""
+            }
+            const end = markdown.indexOf("\\)", i + 2)
+            if (end !== -1) {
+                segments.push({
+                    type: "math",
+                    content: markdown.slice(i + 2, end).trim(),
+                    displayMode: false
+                })
+                i = end + 2
+                continue
+            }
+        }
+
+        // Display math: \[...\]
+        if (i + 1 < len && markdown[i] === "\\" && markdown[i + 1] === "[") {
+            if (currentText) {
+                segments.push({ type: "text", content: currentText, displayMode: false })
+                currentText = ""
+            }
+            const end = markdown.indexOf("\\]", i + 2)
+            if (end !== -1) {
+                segments.push({
+                    type: "math",
+                    content: markdown.slice(i + 2, end).trim(),
+                    displayMode: true
+                })
+                i = end + 2
+                continue
+            }
+        }
+
+        // Inline math: $...$ (single dollar, not followed by space/newline)
+        if (
+            markdown[i] === "$" &&
+            i + 1 < len &&
+            markdown[i + 1] !== "$" &&
+            markdown[i + 1] !== " " &&
+            markdown[i + 1] !== "\n" &&
+            markdown[i + 1] !== "\t"
+        ) {
+            const end = markdown.indexOf("$", i + 1)
+            if (end !== -1) {
+                const content = markdown.slice(i + 1, end).trim()
+                if (content.length > 0 && !/\s/.test(markdown[i + 1])) {
+                    if (currentText) {
+                        segments.push({ type: "text", content: currentText, displayMode: false })
+                        currentText = ""
+                    }
+                    segments.push({ type: "math", content, displayMode: false })
+                    i = end + 1
+                    continue
+                }
+            }
+        }
+
+        currentText += markdown[i]
+        i++
+    }
+
+    if (currentText) {
+        segments.push({ type: "text", content: currentText, displayMode: false })
+    }
+
+    return segments
+}
+
+function renderLatex(latex: string, displayMode: boolean): string {
+    try {
+        return katex.renderToString(latex, {
+            displayMode,
+            throwOnError: false,
+            strict: "ignore",
+            trust: true
+        })
+    } catch {
+        return latex
+    }
+}
+
 export default function MarkdownPage() {
     const [markdown, setMarkdown] = useState("")
     const [status, setStatus] = useState("")
@@ -289,6 +456,11 @@ export default function MarkdownPage() {
     }
 
     const tokenEstimate = Math.ceil(markdown.length / 4)
+
+    const renderedPreview = useMemo(() => {
+        const preprocessed = preprocessLatex(markdown)
+        return splitMathSegments(preprocessed)
+    }, [markdown])
 
     return (
         <div className="h-screen flex flex-col bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
@@ -465,7 +637,19 @@ export default function MarkdownPage() {
                     </div>
                     <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
                         <article className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-headings:font-medium prose-headings:tracking-tight prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-zinc-400 prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline prose-pre:bg-zinc-950 prose-pre:border prose-pre:border-zinc-800 prose-strong:text-zinc-200 prose-code:rounded prose-li:text-zinc-400 prose-ul:marker:text-zinc-600 prose-ol:marker:text-zinc-600 prose-blockquote:border-l-zinc-700 prose-blockquote:text-zinc-400 prose-blockquote:font-normal prose-blockquote:not-italic prose-hr:border-zinc-800 prose-pre:leading-none prose-p:my-0 prose-hr:my-4">
-                            <Markdown>{markdown}</Markdown>
+                            {renderedPreview.map((segment, idx) =>
+                                segment.type === "math" ? (
+                                    <div
+                                        key={idx}
+                                        className={segment.displayMode ? "katex-display" : ""}
+                                        dangerouslySetInnerHTML={{
+                                            __html: renderLatex(segment.content, segment.displayMode)
+                                        }}
+                                    />
+                                ) : (
+                                    <Markdown key={idx}>{segment.content}</Markdown>
+                                )
+                            )}
                         </article>
                     </div>
                 </div>
