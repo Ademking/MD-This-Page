@@ -59,6 +59,9 @@ HTML pages include navigation bars, scripts, ads, and deeply nested DOM structur
   - Copy to clipboard
   - Download as a `.md` file
   - Copy as a prompt (useful for AI workflows)
+- **Quick Actions:** Right-click the page *or* the toolbar icon for "Copy Markdown", "Copy as Prompt", and "Download .MD" — these run instantly without opening the preview tab.
+- **One-Click Toolbar Button:** In the extension's Options page, enable "One-Click Action Button" to make a left-click on the toolbar icon immediately run your chosen quick action (Download / Copy Markdown / Copy as Prompt).
+- **Options Page:** Configure which content is included in quick actions (Images, Links, Page Info, Map, Source) so you don't have to re-toggle it every time. Settings sync across your signed-in browser profiles.
 
 ## Try it out!
 

@@ -4,6 +4,9 @@ import katex from "katex"
 
 import "katex/dist/katex.min.css"
 
+import { formatMarkdown } from "~lib/format"
+import { getSettings } from "~lib/settings"
+
 import "./style.css"
 
 const CheckIcon = (props) => (
@@ -170,82 +173,6 @@ const MapIcon = (props) => (
         <path d="M9 3.236v15" />
     </svg>
 )
-
-interface HeadingNode {
-    text: string
-    level: number
-    children: HeadingNode[]
-}
-
-function generatePageMap(
-    markdown: string,
-    title: string = "Document Structure"
-): string {
-    const lines = markdown.split("\n")
-    const headings: { level: number; text: string }[] = []
-
-    // Extract headings
-    lines.forEach((line) => {
-        const match = line.match(/^(#{1,6})\s+(.+)$/)
-        if (match) {
-            headings.push({ level: match[1].length, text: match[2].trim() })
-        }
-    })
-
-    if (headings.length === 0) return ""
-
-    // Build tree
-    const root: HeadingNode = { text: title, level: 0, children: [] }
-    const stack: HeadingNode[] = [root]
-
-    headings.forEach((h) => {
-        const node: HeadingNode = { text: h.text, level: h.level, children: [] }
-        while (stack.length > 1 && stack[stack.length - 1].level >= h.level) {
-            stack.pop()
-        }
-        stack[stack.length - 1].children.push(node)
-        stack.push(node)
-    })
-
-    // Render tree
-    let mapStr = `${title}\n`
-
-    function renderNode(
-        node: HeadingNode,
-        prefix: string,
-        isLast: boolean,
-        isRoot: boolean
-    ) {
-        if (!isRoot) {
-            const connector = isLast ? "└── " : "├── "
-            mapStr += `${prefix}${connector}${node.text}\n`
-
-            // For children
-            if (node.children.length > 0) {
-                const childPrefix = prefix + (isLast ? "    " : "│   ")
-                node.children.forEach((child, index) => {
-                    renderNode(
-                        child,
-                        childPrefix,
-                        index === node.children.length - 1,
-                        false
-                    )
-                })
-            }
-        } else {
-            node.children.forEach((child, index) => {
-                renderNode(child, "", index === node.children.length - 1, false)
-            })
-        }
-    }
-
-    renderNode(root, "", true, true)
-
-    // Clean up empty vertical lines at the end if any
-    mapStr = mapStr.replace(/│\n$/g, "").trimEnd()
-
-    return "# Page Structure Map\n```text\n" + mapStr + "\n```\n"
-}
 
 function preprocessLatex(markdown: string): string {
     let result = ""
@@ -439,62 +366,30 @@ export default function MarkdownPage() {
                 setError("No page data found. Please trigger the extension again.")
             }
         })
+
+        // Seed the toggles from the persisted Options page settings so the
+        // tab matches whatever the user configured for the quick actions.
+        getSettings().then(({ format }) => {
+            setToggles({
+                removeImages: !format.includeImages,
+                removeLinks: !format.includeLinks,
+                showMetadata: format.includePageInfo,
+                showSourceUrl: format.includeSourceUrl,
+                showPageMap: format.includeMap
+            })
+        })
     }, [])
 
     useEffect(() => {
         if (!pageData || !pageData.markdown) return
 
-        let baseMd = pageData.markdown
-
-        if (toggles.removeImages) {
-            // Remove markdown images: ![alt](url)
-            baseMd = baseMd.replace(/!\[([^\]]*)\]\([^)]+\)/g, "")
-            // Remove lingering HTML image tags that Turndown may have skipped
-            baseMd = baseMd.replace(/<img[^>]*>/gi, "")
-        }
-
-        if (toggles.removeLinks) {
-            // Remove markdown links but keep text: [text](url)
-            baseMd = baseMd.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-            // Remove lingering HTML anchor tags but keep text
-            baseMd = baseMd.replace(/<a[^>]*>(.*?)<\/a>/gi, "$1")
-        }
-
-        let finalMd = ""
-        let meta = []
-
-        if (toggles.showMetadata) {
-            if (pageData.title) meta.push(`**Title:** ${pageData.title}`)
-            if (pageData.author) meta.push(`**Author:** ${pageData.author}`)
-            if (pageData.date)
-                meta.push(`**Date:** ${new Date(pageData.date).toLocaleDateString()}`)
-        }
-        if (toggles.showSourceUrl && pageData.url) {
-            meta.push(`**Source:** [${pageData.url}](${pageData.url})`)
-        }
-
-        if (meta.length > 0) {
-            finalMd += meta.join("\n\n") + "\n\n---\n\n"
-        }
-
-        if (toggles.showPageMap) {
-            const pageMap = generatePageMap(
-                baseMd,
-                pageData.title || "Page structure map"
-            )
-            if (pageMap) {
-                finalMd += pageMap + "\n---\n\n"
-            }
-        }
-
-        finalMd += baseMd
-
-        // Remove lines that contain only a solitary dash or middle dot (possibly with spaces)
-        finalMd = finalMd.replace(/^[ \t]*[-·][ \t]*$/gm, "")
-
-        // Clean up any spaces on blank lines, then collapse 3+ newlines into 2
-        finalMd = finalMd.replace(/^[ \t]+$/gm, "")
-        finalMd = finalMd.replace(/\n{3,}/g, "\n\n").trim()
+        const finalMd = formatMarkdown(pageData, {
+            includeImages: !toggles.removeImages,
+            includeLinks: !toggles.removeLinks,
+            includePageInfo: toggles.showMetadata,
+            includeSourceUrl: toggles.showSourceUrl,
+            includeMap: toggles.showPageMap
+        })
 
         setMarkdown(finalMd)
     }, [pageData, toggles])

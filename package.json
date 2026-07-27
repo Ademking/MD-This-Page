@@ -46,7 +46,8 @@
     "permissions": [
       "activeTab",
       "contextMenus",
-      "storage"
+      "storage",
+      "clipboardWrite"
     ],
     "commands": {
       "convert-to-markdown": {
