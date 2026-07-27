@@ -56,12 +56,13 @@ export default function OptionsPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans px-6 py-10">
       <div className="max-w-lg mx-auto space-y-8">
-        <h1 className="text-xl font-semibold">.MD this page — Options</h1>
+        <h1 className="text-xl font-semibold">.MD this page Options</h1>
 
         <section className="space-y-3">
           <label className="flex items-center gap-2 text-sm font-medium">
             <input
               type="checkbox"
+              className="accent-emerald-500"
               checked={settings.oneClickEnabled}
               onChange={(e) =>
                 setSettings((prev) => ({
@@ -86,6 +87,7 @@ export default function OptionsPage() {
                 }`}>
                 <input
                   type="radio"
+                  className="accent-emerald-500"
                   name="oneClickAction"
                   value={opt.value}
                   disabled={!settings.oneClickEnabled}
@@ -116,6 +118,7 @@ export default function OptionsPage() {
               <label key={opt.key} className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
+                  className="accent-emerald-500"
                   checked={settings.format[opt.key]}
                   onChange={() => toggleFormat(opt.key)}
                 />
