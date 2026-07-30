@@ -1,4 +1,5 @@
 import { asPrompt, formatMarkdown, type PageData } from "~lib/format"
+import { openMarkdownPage } from "~lib/open-markdown-page"
 import { getSettings, type QuickAction } from "~lib/settings"
 
 export {}
@@ -65,7 +66,9 @@ chrome.action.onClicked.addListener(async (tab) => {
 chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "open-markdown-tab") {
     chrome.storage.local.set({ pageData: request.pageData || null }, () => {
-      chrome.tabs.create({ url: chrome.runtime.getURL("tabs/markdown.html") })
+      void openMarkdownPage().catch((error) => {
+        console.error("Failed to open Markdown preview:", error)
+      })
     })
   }
 })
@@ -101,7 +104,11 @@ async function runQuickAction(tabId: number, action: QuickAction) {
   }
 }
 
-async function downloadMarkdown(tabId: number, markdown: string, title: string) {
+async function downloadMarkdown(
+  tabId: number,
+  markdown: string,
+  title: string
+) {
   // Triggered from the tab's own content script rather than
   // chrome.downloads.download() with a data: URL: Firefox rejects data:
   // URLs requested by a background script with "Access denied", even though
