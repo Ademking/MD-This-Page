@@ -1,45 +1,4 @@
-import Defuddle from "defuddle"
-import TurndownService from "turndown"
-
-import type { PageData } from "~lib/format"
-
-const turndown = new TurndownService()
-
-function extractPageData(): PageData {
-  const defuddle = new Defuddle(document, {
-    url: location.href,
-    removeExactSelectors: true
-  })
-
-  const result = defuddle.parse()
-
-  let markdown = ""
-  if (result?.content && result.content.trim().length > 0) {
-    markdown = turndown.turndown(result.content).trim()
-  }
-
-  if (!markdown) {
-    document
-      .querySelectorAll('script, style, link, noscript, svg, [aria-hidden="true"]')
-      .forEach((el) => el.remove())
-    const body =
-      document.querySelector('[role="main"]') ||
-      document.querySelector("main") ||
-      document.querySelector("article") ||
-      document.body
-    markdown = turndown.turndown(body?.innerHTML || "").trim()
-  }
-
-  return {
-    markdown,
-    title: result?.title || document.title,
-    author: result?.author || "",
-    date: result?.published || "",
-    url: location.href,
-    domain: result?.domain || location.hostname,
-    raw: result
-  }
-}
+import { extractPageData } from "~lib/extract-page-data"
 
 function downloadMarkdown(markdown: string, filename: string) {
   // Done here rather than via chrome.downloads.download() with a data: URL
@@ -63,14 +22,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       chrome.runtime.sendMessage({
         action: "open-markdown-tab",
-        pageData: extractPageData()
+        pageData: extractPageData(document, location.href)
       })
     } catch (error) {
       console.error("Markdown conversion failed:", error)
     }
   } else if (request.action === "extract-page-data") {
     try {
-      sendResponse(extractPageData())
+      sendResponse(extractPageData(document, location.href))
     } catch (error) {
       console.error("Markdown conversion failed:", error)
       sendResponse(null)
