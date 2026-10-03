@@ -87,21 +87,6 @@ Browsers never let extensions read their own internal pages (`chrome://`, `about
 
 ## Try it out!
 
-<table align="center">
-  <tr>
-    <td align="center">
-      <a href="https://chromewebstore.google.com/detail/md-this-page/banfcmclfmmlbkhionmemhibbjedhikm">
-        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/download-chrome.svg">
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://addons.mozilla.org/en-US/firefox/addon/md-this-page/">
-        <img src="https://raw.githubusercontent.com/Ademking/BetterViewer/master/docs/firefox.svg">
-      </a>
-    </td>
-  </tr>
-</table>
-
 Or you can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, click the toolbar icon (or right-click on any webpage → **Open Preview Tab**) to see the magic happen.
 
 <img width="1919" height="1046" alt="image" src="https://github.com/user-attachments/assets/73351a35-bdd2-478d-8b5e-d57bdf9de12f" />
