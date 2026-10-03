@@ -1,7 +1,7 @@
 # .MD this page
 
 > Turn any webpage into clean, LLM-ready Markdown in one click.  
-> Strip the browser, keep the structure, then copy or download instantly.
+> Strip the clutter, keep the structure, then copy or download instantly.
 
 ![](screenshot.png)
 
@@ -25,8 +25,8 @@
 ### How it works
 
 1. Open any webpage  
-2. Right-click → ".MD this page" (or press `Alt+M`)  
-3. Get clean Markdown instantly  
+2. Click the toolbar icon, right-click → **Open Preview Tab**, or press `Alt+M`  
+3. Get clean Markdown instantly — copy it, copy it as an LLM prompt, or download a `.md` file
 
 ## Why Markdown (and why it matters for LLMs)
 
@@ -46,22 +46,46 @@ HTML pages include navigation bars, scripts, ads, and deeply nested DOM structur
 
 ## Features
 
-- **One-Click Conversion:** Use the context menu (right-click) or the keyboard shortcut (`Alt+M`) to instantly convert the current page.
-- **Smart Extraction:** Powered by Mozilla's Readability library to isolate the main content and ignore ads, navbars, and unnecessary elements.
-- **Dedicated Preview Tab:** Opens a clean interface where you can view and refine the extracted Markdown.
-- **Customizable Output:** Toggle various elements to tailor the Markdown to your needs:
-  - Remove/Keep Images
-  - Remove/Keep Links
-  - Show/Hide Metadata (Title, Author, Date)
-  - Show/Hide Source URL
-  - Generate a Document Structure / Page Map
+- **One-Click Conversion:** Click the toolbar icon, use the context menu (right-click), or press `Alt+M` to convert the current page.
+- **Smart Extraction:** Powered by [Defuddle](https://github.com/kepano/defuddle) to isolate the main content and drop ads, navbars and other clutter. Works on client-side rendered apps (React, Angular, Vue…) and falls back to the whole visible page when a site isn't article-shaped.
+- **Math & Code:** Equations (MathML, MathJax, KaTeX, Wikipedia) become LaTeX (`$…$` / `$$…$$`), code blocks keep their fences.
+- **Dedicated Preview Tab:** A clean editor + live preview (with rendered math) where you can refine the Markdown before exporting. Split, Markdown-only and Preview-only layouts, light/dark theme, token/word/character counts, and a **Re-extract** button for pages that load more content after the fact.
+- **Customizable Output:** Toggle what goes into the Markdown:
+  - Images
+  - Links
+  - Page info (title, author, date)
+  - Source URL
+  - Page map (a tree outline of the page's headings)
 - **Export Options:**
-  - Copy to clipboard
-  - Download as a `.md` file
-  - Copy as a prompt (useful for AI workflows)
+  - Copy to clipboard (`Ctrl/⌘+Shift+C` in the preview)
+  - Download as a `.md` file (`Ctrl/⌘+S` in the preview)
+  - Copy as a prompt — wrapped in a ```` ```markdown ```` fence for AI chats
 - **Quick Actions:** Right-click the page *or* the toolbar icon for "Copy Markdown", "Copy as Prompt", and "Download .MD" — these run instantly without opening the preview tab.
-- **One-Click Toolbar Button:** In the extension's Options page, enable "One-Click Action Button" to make a left-click on the toolbar icon immediately run your chosen quick action (Download / Copy Markdown / Copy as Prompt).
-- **Options Page:** Configure which content is included in quick actions (Images, Links, Page Info, Map, Source) so you don't have to re-toggle it every time. Settings sync across your signed-in browser profiles.
+- **One-Click Toolbar Button:** In Options, enable "One-click action" to make a left-click on the toolbar icon immediately run your chosen quick action.
+- **Options Page:** Choose the default content toggles, the one-click action, auto-copy and the theme. Settings sync across your signed-in browsers.
+
+## Privacy & permissions
+
+.MD this page only reads a page **when you ask it to**. There is no content script running on every website: the extractor is injected into the current tab only after you click the toolbar icon, use the context menu or press the shortcut. Everything happens locally — no page content is sent anywhere.
+
+| Permission | Why |
+| --- | --- |
+| `activeTab` | Temporary access to the tab you just invoked the extension on. No broad host permissions. |
+| `scripting` | Inject the extractor into that tab on demand. |
+| `contextMenus` | The right-click menu entries. |
+| `storage` | Your settings, and the conversion handed to the preview tab. |
+| `clipboardWrite` | Copy the Markdown from the quick actions. |
+
+## Browser support
+
+| Browser | Status |
+| --- | --- |
+| Chrome, Edge, Brave, Opera, Vivaldi | ✅ Chrome Web Store build |
+| Arc | ✅ (opens the preview in a popup window when Arc blocks new tabs) |
+| Firefox, Zen and other Gecko browsers | ✅ Firefox Add-ons build |
+| Safari (macOS) | 🧪 Build it yourself, see [Safari](#safari) |
+
+Browsers never let extensions read their own internal pages (`chrome://`, `about:`, the extension stores, the built-in PDF viewer). For local `file://` pages, enable **Allow access to file URLs** for the extension.
 
 ## Try it out!
 
@@ -80,7 +104,7 @@ HTML pages include navigation bars, scripts, ads, and deeply nested DOM structur
   </tr>
 </table>
 
-Or you can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, simply right-click on any webpage and select ".MD this page" to see the magic happen.
+Or you can install the extension from [releases](https://github.com/Ademking/MD-This-Page/releases) or build it from source (see instructions below). Once installed, click the toolbar icon (or right-click on any webpage → **Open Preview Tab**) to see the magic happen.
 
 
 <img width="1919" height="1046" alt="image" src="https://github.com/user-attachments/assets/73351a35-bdd2-478d-8b5e-d57bdf9de12f" />
@@ -116,7 +140,7 @@ This extension is built with [Plasmo](https://docs.plasmo.com/) and React.
    pnpm dev
    ```
 
-   _This will run the Plasmo dev server and generate a `build/chrome-mv3-dev` directory._
+   _This builds the page extractor and runs the Plasmo dev server, generating a `build/chrome-mv3-dev` directory. If you change `lib/extract-page-data.ts`, run `pnpm build:extractor` (or `node scripts/build-extractor.mjs --watch` in a second terminal)._
 
 4. Load the extension in Chrome:
    - Go to `chrome://extensions/`
@@ -126,21 +150,34 @@ This extension is built with [Plasmo](https://docs.plasmo.com/) and React.
 
 ### Building for Production
 
-To create a production build of the extension:
-
 ```bash
-pnpm build
+pnpm build           # build/chrome-mv3-prod
+pnpm build:chrome    # + zip for the Chrome Web Store
+pnpm build:firefox   # + zip for Firefox Add-ons
+pnpm build:edge      # + zip for Edge Add-ons
+pnpm build:all       # all of the above
+pnpm typecheck
 ```
 
-This will output the production-ready extension into `build/chrome-mv3-prod`.
+### Safari
+
+You need a Mac with Xcode. Build the Safari target, then convert it into an Xcode project (thanks @alexvenzke):
+
+```bash
+pnpm install && pnpm build:safari
+xcrun safari-web-extension-converter build/safari-mv3-prod   --project-location MDThisPage-Safari   --app-name "MDThisPage"   --bundle-identifier com.local.md-this-page   --no-prompt
+```
+
+Open `MDThisPage-Safari/MDThisPage/MDThisPage.xcodeproj`, set your signing team on both targets, then build and run. In Safari: **Settings → Advanced → Show features for web developers**, **Develop → Allow Unsigned Extensions**, then enable the extension in **Settings → Extensions**.
 
 ## Built With
 
 - [Plasmo](https://plasmo.com/) - Browser Extension Framework
 - [React](https://reactjs.org/) - UI Library
+- [Shark UI](https://shark-ui.com/) - Components (built on [Ark UI](https://ark-ui.com/))
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [@mozilla/readability](https://github.com/mozilla/readability) - Content extraction
-- [Turndown](https://github.com/mixmark-io/turndown) - HTML to Markdown conversion
+- [Defuddle](https://github.com/kepano/defuddle) - Content extraction and HTML to Markdown conversion
+- [marked](https://marked.js.org/), [KaTeX](https://katex.org/) and [DOMPurify](https://github.com/cure53/DOMPurify) - Live preview
 
 ## License
 
