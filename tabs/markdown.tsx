@@ -1,659 +1,632 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import Markdown from "markdown-to-jsx"
-import katex from "katex"
+import {
+  CheckIcon,
+  ClipboardPasteIcon,
+  CopyIcon,
+  DownloadIcon,
+  ExternalLinkIcon,
+  FileUserIcon,
+  ImageIcon,
+  Link2Icon,
+  LinkIcon,
+  MapIcon,
+  MoonIcon,
+  RefreshCwIcon,
+  RotateCcwIcon,
+  SettingsIcon,
+  SparklesIcon,
+  SunIcon,
+  TriangleAlertIcon,
+  type LucideIcon
+} from "lucide-react"
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react"
 
 import "katex/dist/katex.min.css"
+import "~styles/globals.css"
 
-import { formatMarkdown } from "~lib/format"
+import { Brand } from "~components/brand"
+import { Alert, AlertDescription, AlertTitle } from "~components/ui/alert"
+import { Badge } from "~components/ui/badge"
+import { Button } from "~components/ui/button"
+import {
+  SegmentGroup,
+  SegmentGroupItem,
+  SegmentGroupItemText
+} from "~components/ui/segment-group"
+import { Separator } from "~components/ui/separator"
+import { Spinner } from "~components/ui/spinner"
+import { toast, Toaster } from "~components/ui/toast"
+import { ToggleGroup, ToggleGroupItem } from "~components/ui/toggle-group"
+import { Tooltip, TooltipContent, TooltipTrigger } from "~components/ui/tooltip"
+import {
+  asPrompt,
+  DEFAULT_FORMAT_SETTINGS,
+  estimateTokens,
+  formatMarkdown,
+  markdownFilename,
+  type FormatSettings
+} from "~lib/format"
+import { previewKey, type PreviewEntry } from "~lib/preview-store"
+import { renderMarkdown } from "~lib/render-markdown"
 import { getSettings } from "~lib/settings"
+import { isDarkTheme, useTheme } from "~lib/theme"
+import { cn } from "~lib/utils"
 
-import "./style.css"
+type View = "split" | "markdown" | "preview"
 
-const CheckIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-check-icon lucide-check"
-        {...props}>
-        <path d="M20 6 9 17l-5-5" />
-    </svg>
-)
+const FORMAT_TOGGLES: {
+  key: keyof FormatSettings
+  label: string
+  hint: string
+  icon: LucideIcon
+}[] = [
+  {
+    key: "includeImages",
+    label: "Images",
+    hint: "Keep images",
+    icon: ImageIcon
+  },
+  {
+    key: "includeLinks",
+    label: "Links",
+    hint: "Keep hyperlinks",
+    icon: Link2Icon
+  },
+  {
+    key: "includePageInfo",
+    label: "Page info",
+    hint: "Title, author and date",
+    icon: FileUserIcon
+  },
+  {
+    key: "includeMap",
+    label: "Map",
+    hint: "Outline of the page headings",
+    icon: MapIcon
+  },
+  {
+    key: "includeSourceUrl",
+    label: "Source",
+    hint: "Link back to the page",
+    icon: LinkIcon
+  }
+]
 
-const SourceUrlIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-link-icon lucide-link"
-        {...props}>
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-    </svg>
-)
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
+const MOD_KEY = isMac ? "⌘" : "Ctrl"
 
-const MetaDataIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-file-user-icon lucide-file-user"
-        {...props}>
-        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
-        <path d="M14 2v5a1 1 0 0 0 1 1h5" />
-        <path d="M16 22a4 4 0 0 0-8 0" />
-        <circle cx={12} cy={15} r={3} />
-    </svg>
-)
+function useMarkdownPreviewEntry(id: string | null) {
+  const [entry, setEntry] = useState<PreviewEntry | null>(null)
+  const [missing, setMissing] = useState(false)
 
-const LinkIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-link2-icon lucide-link-2"
-        {...props}>
-        <path d="M9 17H7A5 5 0 0 1 7 7h2" />
-        <path d="M15 7h2a5 5 0 1 1 0 10h-2" />
-        <line x1={8} x2={16} y1={12} y2={12} />
-    </svg>
-)
-
-const ImageIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-image-icon lucide-image"
-        {...props}>
-        <rect width={18} height={18} x={3} y={3} rx={2} ry={2} />
-        <circle cx={9} cy={9} r={2} />
-        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-    </svg>
-)
-
-const CopyIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-copy-icon lucide-copy"
-        {...props}>
-        <rect width={14} height={14} x={8} y={8} rx={2} ry={2} />
-        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-    </svg>
-)
-
-const DownloadIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-download-icon lucide-download"
-        {...props}>
-        <path d="M12 15V3" />
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <path d="m7 10 5 5 5-5" />
-    </svg>
-)
-
-const PasteIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        {...props}>
-        <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-    </svg>
-)
-
-const TrashIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        {...props}>
-        <path d="M3 6h18" />
-        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-    </svg>
-)
-
-const MapIcon = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="lucide lucide-map-icon lucide-map"
-        {...props}
-    >
-        <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" />
-        <path d="M15 5.764v15" />
-        <path d="M9 3.236v15" />
-    </svg>
-)
-
-function preprocessLatex(markdown: string): string {
-    let result = ""
-    let i = 0
-    const len = markdown.length
-
-    while (i < len) {
-        // Wikipedia-style: {\displaystyle ...}
-        if (markdown.slice(i, i + 14) === "{\\displaystyle") {
-            let openIndex = i + 14
-            while (openIndex < len && /\s/.test(markdown[openIndex])) {
-                openIndex++
-            }
-
-            if (markdown[openIndex] === "{") {
-                let depth = 0
-                let endIndex = -1
-
-                for (let idx = openIndex; idx < len; idx++) {
-                    const char = markdown[idx]
-                    if (char === "\\") {
-                        idx++
-                        continue
-                    }
-                    if (char === "{") {
-                        depth++
-                    } else if (char === "}") {
-                        depth--
-                        if (depth === 0) {
-                            endIndex = idx
-                            break
-                        }
-                    }
-                }
-
-                if (endIndex !== -1) {
-                    const latexBody = markdown.slice(openIndex + 1, endIndex).trim()
-                    result += `$$${latexBody}$$`
-                    i = endIndex + 1
-                    continue
-                }
-            }
-        }
-
-        result += markdown[i]
-        i++
+  useEffect(() => {
+    if (!id) {
+      setMissing(true)
+      return
     }
+    const key = previewKey(id)
+    chrome.storage.local.get(key).then((result) => {
+      if (result?.[key]) setEntry(result[key])
+      else setMissing(true)
+    })
 
-    return result
+    const onChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      area: string
+    ) => {
+      if (area === "local" && changes[key]?.newValue) {
+        setEntry(changes[key].newValue)
+        setMissing(false)
+      }
+    }
+    chrome.storage.onChanged.addListener(onChange)
+    return () => chrome.storage.onChanged.removeListener(onChange)
+  }, [id])
+
+  return { entry, missing }
 }
 
-interface MathSegment {
-    type: "text" | "math"
-    content: string
-    displayMode: boolean
+function IconTooltip({
+  label,
+  shortcut,
+  children
+}: {
+  label: string
+  shortcut?: string
+  children: React.ReactNode
+}) {
+  return (
+    <Tooltip positioning={{ placement: "bottom" }}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>
+        <span className="flex items-center gap-2">
+          {label}
+          {shortcut && (
+            <kbd className="rounded-sm bg-background/20 px-1 font-sans">
+              {shortcut}
+            </kbd>
+          )}
+        </span>
+      </TooltipContent>
+    </Tooltip>
+  )
 }
 
-function splitMathSegments(markdown: string): MathSegment[] {
-    const segments: MathSegment[] = []
-    let i = 0
-    let currentText = ""
-    const len = markdown.length
-
-    while (i < len) {
-        // Display math: $$...$$
-        if (i + 1 < len && markdown[i] === "$" && markdown[i + 1] === "$") {
-            if (currentText) {
-                segments.push({ type: "text", content: currentText, displayMode: false })
-                currentText = ""
-            }
-            const end = markdown.indexOf("$$", i + 2)
-            if (end !== -1) {
-                segments.push({
-                    type: "math",
-                    content: markdown.slice(i + 2, end).trim(),
-                    displayMode: true
-                })
-                i = end + 2
-                continue
-            }
-        }
-
-        // Inline math: \(...\)
-        if (i + 1 < len && markdown[i] === "\\" && markdown[i + 1] === "(") {
-            if (currentText) {
-                segments.push({ type: "text", content: currentText, displayMode: false })
-                currentText = ""
-            }
-            const end = markdown.indexOf("\\)", i + 2)
-            if (end !== -1) {
-                segments.push({
-                    type: "math",
-                    content: markdown.slice(i + 2, end).trim(),
-                    displayMode: false
-                })
-                i = end + 2
-                continue
-            }
-        }
-
-        // Display math: \[...\]
-        if (i + 1 < len && markdown[i] === "\\" && markdown[i + 1] === "[") {
-            if (currentText) {
-                segments.push({ type: "text", content: currentText, displayMode: false })
-                currentText = ""
-            }
-            const end = markdown.indexOf("\\]", i + 2)
-            if (end !== -1) {
-                segments.push({
-                    type: "math",
-                    content: markdown.slice(i + 2, end).trim(),
-                    displayMode: true
-                })
-                i = end + 2
-                continue
-            }
-        }
-
-        // Inline math: $...$ (single dollar, not followed by space/newline)
-        if (
-            markdown[i] === "$" &&
-            i + 1 < len &&
-            markdown[i + 1] !== "$" &&
-            markdown[i + 1] !== " " &&
-            markdown[i + 1] !== "\n" &&
-            markdown[i + 1] !== "\t"
-        ) {
-            const end = markdown.indexOf("$", i + 1)
-            if (end !== -1) {
-                const content = markdown.slice(i + 1, end).trim()
-                if (content.length > 0 && !/\s/.test(markdown[i + 1])) {
-                    if (currentText) {
-                        segments.push({ type: "text", content: currentText, displayMode: false })
-                        currentText = ""
-                    }
-                    segments.push({ type: "math", content, displayMode: false })
-                    i = end + 1
-                    continue
-                }
-            }
-        }
-
-        currentText += markdown[i]
-        i++
-    }
-
-    if (currentText) {
-        segments.push({ type: "text", content: currentText, displayMode: false })
-    }
-
-    return segments
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      <span className="font-medium text-foreground tabular-nums">
+        {value.toLocaleString()}
+      </span>{" "}
+      {label}
+    </span>
+  )
 }
 
-function renderLatex(latex: string, displayMode: boolean): string {
-    try {
-        return katex.renderToString(latex, {
-            displayMode,
-            throwOnError: false,
-            strict: "ignore",
-            trust: true
-        })
-    } catch {
-        return latex
-    }
+function Pane({
+  title,
+  actions,
+  className,
+  children
+}: {
+  title: React.ReactNode
+  actions?: React.ReactNode
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      className={cn(
+        "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-xs/5",
+        className
+      )}>
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b bg-muted/40 px-3">
+        <h2 className="flex items-center gap-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {title}
+        </h2>
+        <div className="flex items-center gap-1">{actions}</div>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function CenteredState({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-1 items-center justify-center p-6">
+      <div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
+        {children}
+      </div>
+    </div>
+  )
 }
 
 export default function MarkdownPage() {
-    const [markdown, setMarkdown] = useState("")
-    const [status, setStatus] = useState("")
-    const [error, setError] = useState("")
-    const [pageData, setPageData] = useState<any>(null)
-    const [hasAutoCopied, setHasAutoCopied] = useState(false)
-    const [copiedIcon, setCopiedIcon] = useState<
-        "markdown" | "prompt" | "download" | null
-    >(null)
-    const [toggles, setToggles] = useState({
-        removeImages: true,
-        removeLinks: true,
-        showMetadata: true,
-        showSourceUrl: true,
-        showPageMap: true
+  const previewId = useMemo(
+    () => new URLSearchParams(location.search).get("id"),
+    []
+  )
+  const { entry, missing } = useMarkdownPreviewEntry(previewId)
+  const [theme, setTheme] = useTheme()
+
+  const [format, setFormat] = useState<FormatSettings>(DEFAULT_FORMAT_SETTINGS)
+  const [autoCopy, setAutoCopy] = useState<boolean | null>(null)
+  const [markdown, setMarkdown] = useState("")
+  const [edited, setEdited] = useState(false)
+  const [view, setView] = useState<View>("split")
+  const [copied, setCopied] = useState<"markdown" | "prompt" | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const autoCopiedFor = useRef<number | null>(null)
+
+  const pageData = entry?.status === "ready" ? entry.pageData : null
+
+  // Seed the toggles from the Options page so the tab matches whatever the
+  // user configured for the quick actions.
+  useEffect(() => {
+    getSettings().then((settings) => {
+      setFormat(settings.format)
+      setAutoCopy(settings.autoCopyPreview)
     })
+  }, [])
 
-    useEffect(() => {
-        chrome.storage.local.get(["pageData"], (result) => {
-            if (chrome.runtime.lastError) {
-                setError(chrome.runtime.lastError.message || "Failed to load")
-            } else if (result.pageData) {
-                setPageData(result.pageData)
-            } else {
-                setError("No page data found. Please trigger the extension again.")
-            }
-        })
+  const generated = useMemo(
+    () => (pageData ? formatMarkdown(pageData, format) : ""),
+    [pageData, format]
+  )
 
-        // Seed the toggles from the persisted Options page settings so the
-        // tab matches whatever the user configured for the quick actions.
-        getSettings().then(({ format }) => {
-            setToggles({
-                removeImages: !format.includeImages,
-                removeLinks: !format.includeLinks,
-                showMetadata: format.includePageInfo,
-                showSourceUrl: format.includeSourceUrl,
-                showPageMap: format.includeMap
-            })
-        })
-    }, [])
+  useEffect(() => {
+    setMarkdown(generated)
+    setEdited(false)
+  }, [generated])
 
-    useEffect(() => {
-        if (!pageData || !pageData.markdown) return
+  useEffect(() => {
+    const title = pageData?.title || entry?.sourceTitle
+    document.title = title ? `${title} · .MD this page` : ".MD this page"
+  }, [pageData, entry])
 
-        const finalMd = formatMarkdown(pageData, {
-            includeImages: !toggles.removeImages,
-            includeLinks: !toggles.removeLinks,
-            includePageInfo: toggles.showMetadata,
-            includeSourceUrl: toggles.showSourceUrl,
-            includeMap: toggles.showPageMap
-        })
-
-        setMarkdown(finalMd)
-    }, [pageData, toggles])
-
-    useEffect(() => {
-        if (markdown && !hasAutoCopied) {
-            setHasAutoCopied(true)
-            navigator.clipboard
-                .writeText(markdown)
-                .then(() => {
-                    setStatus("Auto-copied!")
-                    setTimeout(() => setStatus(""), 2000)
-                })
-                .catch((err) => {
-                    console.error("Auto-copy failed:", err)
-                })
+  const copyText = useCallback(
+    async (text: string, kind: "markdown" | "prompt", quiet = false) => {
+      try {
+        await navigator.clipboard.writeText(text)
+        setCopied(kind)
+        setTimeout(() => setCopied(null), 1500)
+        if (!quiet) {
+          toast.success({
+            title: kind === "prompt" ? "Copied as prompt" : "Markdown copied",
+            duration: 2000
+          })
         }
-    }, [markdown, hasAutoCopied])
+        return true
+      } catch (error) {
+        if (!quiet) {
+          toast.error({
+            title: "Couldn't copy",
+            description: String((error as Error)?.message || error)
+          })
+        }
+        return false
+      }
+    },
+    []
+  )
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(markdown).then(() => {
-            setStatus("Copied!")
-            setCopiedIcon("markdown")
-            setTimeout(() => {
-                setStatus("")
-                setCopiedIcon(null)
-            }, 1500)
+  // Auto-copy once per extraction (if enabled in Options).
+  useEffect(() => {
+    if (!autoCopy || !generated || !entry) return
+    if (autoCopiedFor.current === entry.createdAt) return
+    autoCopiedFor.current = entry.createdAt
+    copyText(generated, "markdown", true).then((ok) => {
+      if (ok) {
+        toast.success({
+          title: "Markdown copied to your clipboard",
+          description: "Auto-copy is on — you can turn it off in Options.",
+          duration: 3000
         })
+      }
+    })
+  }, [autoCopy, generated, entry, copyText])
+
+  const handleDownload = useCallback(() => {
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = markdownFilename(pageData?.title || "")
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    toast.success({ title: `Saved ${a.download}`, duration: 2000 })
+  }, [markdown, pageData])
+
+  const handleRefresh = useCallback(async () => {
+    if (!previewId) return
+    setRefreshing(true)
+    const response = await chrome.runtime
+      .sendMessage({ action: "refresh-preview", id: previewId })
+      .catch((error) => ({ success: false, error: String(error) }))
+    setRefreshing(false)
+    if (response?.success) {
+      autoCopiedFor.current = null
+      toast.success({ title: "Page re-extracted", duration: 2000 })
+    } else {
+      toast.error({
+        title: "Couldn't re-read the page",
+        description:
+          "Go back to the page and run .MD this page again. Browsers only grant access right after you click the extension."
+      })
     }
+  }, [previewId])
 
-    const handleCopyPrompt = () => {
-        const promptText = `\`\`\`markdown\n${markdown}\n\`\`\``
-        navigator.clipboard.writeText(promptText).then(() => {
-            setStatus("Copied as Prompt!")
-            setCopiedIcon("prompt")
-            setTimeout(() => {
-                setStatus("")
-                setCopiedIcon(null)
-            }, 1500)
-        })
+  const handlePaste = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      setMarkdown((current) => (current ? `${text}\n\n${current}` : text))
+      setEdited(true)
+    } catch {
+      toast.error({
+        title: "Clipboard access was blocked",
+        description: `Paste with ${MOD_KEY}+V inside the editor instead.`
+      })
     }
+  }, [])
 
-    const handleToggle = (key: keyof typeof toggles) => {
-        setToggles((p) => ({ ...p, [key]: !p[key] }))
+  // Ctrl/⌘+S downloads, Ctrl/⌘+Shift+C copies.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const mod = isMac ? event.metaKey : event.ctrlKey
+      if (!mod || !markdown) return
+      if (event.key.toLowerCase() === "s") {
+        event.preventDefault()
+        handleDownload()
+      } else if (event.shiftKey && event.key.toLowerCase() === "c") {
+        event.preventDefault()
+        void copyText(markdown, "markdown")
+      }
     }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [markdown, handleDownload, copyText])
 
-    const handleDownload = () => {
-        const blob = new Blob([markdown], { type: "text/markdown" })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `${pageData?.title ? pageData.title.replace(/\s+/g, "_") : "page"}.md`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+  const deferredMarkdown = useDeferredValue(markdown)
+  const previewHtml = useMemo(
+    () => renderMarkdown(deferredMarkdown),
+    [deferredMarkdown]
+  )
 
-        setStatus("Downloaded!")
-        setCopiedIcon("download")
-        setTimeout(() => {
-            setStatus("")
-            setCopiedIcon(null)
-        }, 1500)
-    }
+  const tokens = estimateTokens(markdown)
+  const words = useMemo(
+    () => (markdown.match(/[\p{L}\p{N}]+/gu) || []).length,
+    [markdown]
+  )
 
-    const tokenEstimate = Math.ceil(markdown.length / 4)
+  const isDark = isDarkTheme(theme)
+  const ready = entry?.status === "ready"
 
-    const renderedPreview = useMemo(() => {
-        const preprocessed = preprocessLatex(markdown)
-        return splitMathSegments(preprocessed)
-    }, [markdown])
+  const sourceUrl = pageData?.url || entry?.sourceUrl
+  const sourceTitle = pageData?.title || entry?.sourceTitle || "Untitled page"
+  const sourceDomain =
+    pageData?.domain ||
+    (() => {
+      try {
+        return sourceUrl ? new URL(sourceUrl).hostname : ""
+      } catch {
+        return ""
+      }
+    })()
 
-    return (
-        <div className="h-screen flex flex-col bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
-            <header className="relative px-4 py-4 border-b border-zinc-800/60 bg-zinc-900/60 backdrop-blur-md flex flex-wrap gap-3 items-center justify-between z-10 shrink-0 shadow-sm">
-                <div className="flex items-center gap-2 relative z-10">
-                    <button
-                        onClick={handleCopy}
-                        className="group inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-[0_2px_10px_-3px_rgba(16,185,129,0.3)] transition-all duration-200 active:scale-[0.98] outline-none focus:ring-2 focus:ring-emerald-500/40">
-                        {copiedIcon === "markdown" ? (
-                            <CheckIcon className="w-4 h-4" />
-                        ) : (
-                            <CopyIcon className="w-4 h-4 opacity-90 group-hover:opacity-100" />
-                        )}
-                        Copy Markdown
-                    </button>
-                    <button
-                        onClick={handleCopyPrompt}
-                        className="group inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 transition-all duration-200 active:scale-[0.98] outline-none">
-                        {copiedIcon === "prompt" ? (
-                            <CheckIcon className="w-4 h-4 text-emerald-400" />
-                        ) : (
-                            <CopyIcon className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                        )}
-                        Copy as Prompt
-                    </button>
-                    <button
-                        onClick={handleDownload}
-                        className="group inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 transition-all duration-200 active:scale-[0.98] outline-none">
-                        {copiedIcon === "download" ? (
-                            <CheckIcon className="w-4 h-4 text-emerald-400" />
-                        ) : (
-                            <DownloadIcon className="w-4 h-4 opacity-90 group-hover:opacity-100" />
-                        )}
-                        Download .MD
-                    </button>
-                </div>
+  return (
+    <div className="flex h-svh flex-col overflow-hidden">
+      {/* Top bar */}
+      <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b bg-background/80 px-4 py-2.5 backdrop-blur">
+        <Brand className="shrink-0" />
+        <Separator className="hidden h-6 md:block" orientation="vertical" />
 
-                {pageData && (
-                    <div className="hidden lg:flex flex-col items-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-                        {/* segmented control */}
-                        <div className="flex items-center p-1 bg-zinc-950/60 border border-zinc-800/40 backdrop-blur-xl shadow-lg rounded-full">
-                            {/* Images */}
-                            <button
-                                onClick={() => handleToggle("removeImages")}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all
-          rounded-l-xl
-          ${!toggles.removeImages
-                                        ? "bg-zinc-800 text-white"
-                                        : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40"
-                                    }`}>
-                                <ImageIcon className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100" />
-                                Images
-                            </button>
-
-                            {/* Links */}
-                            <button
-                                onClick={() => handleToggle("removeLinks")}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all
-          border-l border-zinc-800/40
-          ${!toggles.removeLinks
-                                        ? "bg-zinc-800 text-white"
-                                        : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40"
-                                    }`}>
-                                <LinkIcon className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100" />
-                                Links
-                            </button>
-
-                            {/* Metadata */}
-                            <button
-                                onClick={() => handleToggle("showMetadata")}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all
-          border-l border-zinc-800/40
-          ${toggles.showMetadata
-                                        ? "bg-zinc-800 text-white"
-                                        : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40"
-                                    }`}>
-                                <MetaDataIcon className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100" />
-                                Page Info
-                            </button>
-
-                            {/* Page Map */}
-                            <button
-                                onClick={() => handleToggle("showPageMap")}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all
-          border-l border-zinc-800/40
-          ${toggles.showPageMap
-                                        ? "bg-zinc-800 text-white"
-                                        : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40"
-                                    }`}>
-                                <MapIcon className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100" />
-                                Map
-                            </button>
-
-                            {/* Source */}
-                            <button
-                                onClick={() => handleToggle("showSourceUrl")}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all
-          rounded-r-xl border-l border-zinc-800/40
-          ${toggles.showSourceUrl
-                                        ? "bg-zinc-800 text-white"
-                                        : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40"
-                                    }`}>
-                                <SourceUrlIcon className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100" />
-                                Source
-                            </button>
-                        </div>
-                    </div>
-                )}
-                <div className="flex items-center gap-3 text-xs text-zinc-500 relative z-10">
-                    {status ? (
-                        <div className="text-emerald-400 font-medium flex items-center gap-1.5">
-
-                            {status}
-                        </div>
-                    ) : (
-                        <div
-                            className="flex items-center gap-1.5 text-zinc-400"
-                            title="Rough GPT token estimate">
-                            ~
-                            {tokenEstimate.toLocaleString()} tokens
-                        </div>
-                    )}
-                    <div className="hidden sm:block w-px h-3 bg-zinc-700/50"></div>
-                    <div className="hidden sm:block">
-                        {markdown.length.toLocaleString()} chars
-                    </div>
-                </div>
-            </header>
-
-            {error && (
-                <div className="px-4 py-2 text-sm text-red-400 bg-red-950/40 border-b border-red-900/40 shrink-0">
-                    {error}
-                </div>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          {pageData?.favicon ? (
+            <img
+              alt=""
+              className="size-4 shrink-0 rounded-sm"
+              onError={(e) => (e.currentTarget.style.display = "none")}
+              src={pageData.favicon}
+            />
+          ) : null}
+          <div className="min-w-0">
+            <p className="truncate font-medium text-sm" title={sourceTitle}>
+              {entry ? sourceTitle : " "}
+            </p>
+            {sourceUrl && (
+              <a
+                className="flex items-center gap-1 truncate text-muted-foreground text-xs hover:text-foreground"
+                href={sourceUrl}
+                rel="noreferrer"
+                target="_blank"
+                title={sourceUrl}>
+                {sourceDomain}
+                <ExternalLinkIcon className="size-3 shrink-0" />
+              </a>
             )}
-
-            <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 p-3 min-h-0 bg-zinc-950">
-                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/20 flex flex-col overflow-hidden hover:border-zinc-700/80 transition-colors shadow-sm">
-                    <div className="px-3 py-2 text-xs font-medium text-zinc-400 border-b border-zinc-800/80 bg-zinc-900/40 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            Markdown
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard
-                                        .readText()
-                                        .then((text) => setMarkdown(text + "\n\n" + markdown))
-                                        .catch(() => { })
-                                }}
-                                className="hover:text-zinc-200 transition-colors flex items-center gap-1.5 group">
-                                <PasteIcon className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
-                                <span className="hidden xl:inline">Paste</span>
-                            </button>
-                            <button
-                                onClick={() => setMarkdown("")}
-                                className="hover:text-red-400 transition-colors flex items-center gap-1.5 group">
-                                <TrashIcon className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
-                                <span className="hidden xl:inline">Clear</span>
-                            </button>
-                        </div>
-                    </div>
-                    <textarea
-                        value={markdown}
-                        spellCheck={false}
-                        onChange={(e) => setMarkdown(e.target.value)}
-                        className="flex-1 w-full p-4 md:p-5 bg-transparent outline-none text-[13px] font-mono text-zinc-300 leading-relaxed resize-none selection:bg-emerald-500/30 placeholder-zinc-700 overflow-y-auto"
-                        placeholder="Paste or write markdown here..."
-                    />
-                </div>
-
-                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/20 flex flex-col overflow-hidden hover:border-zinc-700/80 transition-colors shadow-sm">
-                    <div className="px-3 py-2.5 text-xs font-medium text-zinc-400 border-b border-zinc-800/80 bg-zinc-900/40">
-                        Live Preview
-                    </div>
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
-                        <article className="prose prose-invert prose-sm max-w-none prose-headings:text-zinc-200 prose-headings:font-medium prose-headings:tracking-tight prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-zinc-400 prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline prose-pre:bg-zinc-950 prose-pre:border prose-pre:border-zinc-800 prose-strong:text-zinc-200 prose-code:rounded prose-li:text-zinc-400 prose-ul:marker:text-zinc-600 prose-ol:marker:text-zinc-600 prose-blockquote:border-l-zinc-700 prose-blockquote:text-zinc-400 prose-blockquote:font-normal prose-blockquote:not-italic prose-hr:border-zinc-800 prose-pre:leading-none prose-p:my-0 prose-hr:my-4">
-                            {renderedPreview.map((segment, idx) =>
-                                segment.type === "math" ? (
-                                    <div
-                                        key={idx}
-                                        className={segment.displayMode ? "katex-display" : ""}
-                                        dangerouslySetInnerHTML={{
-                                            __html: renderLatex(segment.content, segment.displayMode)
-                                        }}
-                                    />
-                                ) : (
-                                    <Markdown key={idx}>{segment.content}</Markdown>
-                                )
-                            )}
-                        </article>
-                    </div>
-                </div>
-            </main>
+          </div>
         </div>
-    )
+
+        <div className="flex items-center gap-1.5">
+          <IconTooltip label="Copy Markdown" shortcut={`${MOD_KEY}+Shift+C`}>
+            <Button
+              disabled={!markdown}
+              onClick={() => copyText(markdown, "markdown")}>
+              {copied === "markdown" ? <CheckIcon /> : <CopyIcon />}
+              Copy Markdown
+            </Button>
+          </IconTooltip>
+          <IconTooltip label="Wrap in a ```markdown fence for LLM chats">
+            <Button
+              disabled={!markdown}
+              onClick={() => copyText(asPrompt(markdown), "prompt")}
+              variant="outline">
+              {copied === "prompt" ? <CheckIcon /> : <SparklesIcon />}
+              <span className="hidden sm:inline">Copy as Prompt</span>
+            </Button>
+          </IconTooltip>
+          <IconTooltip label="Download .md file" shortcut={`${MOD_KEY}+S`}>
+            <Button
+              aria-label="Download .md"
+              disabled={!markdown}
+              onClick={handleDownload}
+              variant="outline">
+              <DownloadIcon />
+              <span className="hidden sm:inline">Download</span>
+            </Button>
+          </IconTooltip>
+
+          <Separator className="mx-1 h-6" orientation="vertical" />
+
+          <IconTooltip label="Re-extract from the page">
+            <Button
+              aria-label="Re-extract from the page"
+              disabled={!entry || entry.status === "loading" || refreshing}
+              onClick={handleRefresh}
+              size="icon-md"
+              variant="ghost">
+              <RefreshCwIcon className={cn(refreshing && "animate-spin")} />
+            </Button>
+          </IconTooltip>
+          <IconTooltip label={isDark ? "Light theme" : "Dark theme"}>
+            <Button
+              aria-label="Toggle theme"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              size="icon-md"
+              variant="ghost">
+              {isDark ? <SunIcon /> : <MoonIcon />}
+            </Button>
+          </IconTooltip>
+          <IconTooltip label="Options">
+            <Button
+              aria-label="Options"
+              onClick={() => chrome.runtime.openOptionsPage()}
+              size="icon-md"
+              variant="ghost">
+              <SettingsIcon />
+            </Button>
+          </IconTooltip>
+        </div>
+      </header>
+
+      {/* Output toolbar */}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-4 py-2">
+        <ToggleGroup
+          aria-label="Content to include"
+          className="flex-wrap"
+          disabled={!ready}
+          multiple
+          onValueChange={({ value }) =>
+            setFormat((current) => {
+              const next = { ...current }
+              FORMAT_TOGGLES.forEach(({ key }) => {
+                next[key] = value.includes(key)
+              })
+              return next
+            })
+          }
+          size="sm"
+          value={FORMAT_TOGGLES.filter(({ key }) => format[key]).map(
+            ({ key }) => key
+          )}
+          variant="outline">
+          {FORMAT_TOGGLES.map(({ key, label, hint, icon: Icon }) => (
+            <ToggleGroupItem
+              className="data-[state=on]:bg-accent data-[state=on]:text-foreground data-[state=off]:text-muted-foreground"
+              key={key}
+              title={hint}
+              value={key}>
+              <Icon />
+              {label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 text-muted-foreground text-xs md:flex">
+            <Stat label="tokens" value={tokens} />
+            <Stat label="words" value={words} />
+            <Stat label="chars" value={markdown.length} />
+          </div>
+          <SegmentGroup
+            aria-label="Layout"
+            className="rounded-lg bg-muted p-0.5 text-xs"
+            onValueChange={({ value }) => value && setView(value as View)}
+            value={view}>
+            {(["split", "markdown", "preview"] as View[]).map((option) => (
+              <SegmentGroupItem
+                className="px-2.5 py-1 font-medium capitalize data-[state=unchecked]:text-muted-foreground"
+                key={option}
+                value={option}>
+                <SegmentGroupItemText>{option}</SegmentGroupItemText>
+              </SegmentGroupItem>
+            ))}
+          </SegmentGroup>
+        </div>
+      </div>
+
+      {/* Body */}
+      {missing || !previewId ? (
+        <CenteredState>
+          <Alert variant="warning">
+            <TriangleAlertIcon />
+            <AlertTitle>Nothing to show</AlertTitle>
+            <AlertDescription>
+              This preview has expired or was opened directly. Go back to a page
+              and click the extension icon, use the right-click menu, or press
+              Alt+M.
+            </AlertDescription>
+          </Alert>
+        </CenteredState>
+      ) : !entry || entry.status === "loading" ? (
+        <CenteredState>
+          <Spinner className="size-6 text-muted-foreground" />
+          <div className="space-y-1">
+            <p className="font-medium">Reading the page…</p>
+            <p className="text-muted-foreground text-sm">
+              Extracting the main content and converting it to Markdown.
+            </p>
+          </div>
+        </CenteredState>
+      ) : entry.status === "error" ? (
+        <CenteredState>
+          <Alert variant="destructive">
+            <TriangleAlertIcon />
+            <AlertTitle>Couldn't convert this page</AlertTitle>
+            <AlertDescription>{entry.error}</AlertDescription>
+          </Alert>
+          <Button
+            isLoading={refreshing}
+            onClick={handleRefresh}
+            variant="outline">
+            <RefreshCwIcon />
+            Try again
+          </Button>
+        </CenteredState>
+      ) : (
+        <main
+          className={cn(
+            "grid min-h-0 flex-1 gap-3 p-3",
+            view === "split" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
+          )}>
+          <Pane
+            actions={
+              <>
+                {edited && (
+                  <Badge className="mr-1" size="sm" variant="info">
+                    Edited
+                  </Badge>
+                )}
+                <Button onClick={handlePaste} size="xs" variant="ghost">
+                  <ClipboardPasteIcon />
+                  Paste
+                </Button>
+                <Button
+                  disabled={!edited}
+                  onClick={() => {
+                    setMarkdown(generated)
+                    setEdited(false)
+                  }}
+                  size="xs"
+                  variant="ghost">
+                  <RotateCcwIcon />
+                  Reset
+                </Button>
+              </>
+            }
+            className={cn(view === "preview" && "hidden")}
+            title="Markdown">
+            <textarea
+              aria-label="Markdown output"
+              className="min-h-0 w-full flex-1 resize-none bg-transparent p-4 font-mono text-[13px] text-foreground/90 leading-relaxed outline-none placeholder:text-muted-foreground md:p-5"
+              onChange={(e) => {
+                setMarkdown(e.target.value)
+                setEdited(true)
+              }}
+              placeholder="No content was found on this page. Paste or write Markdown here…"
+              spellCheck={false}
+              value={markdown}
+            />
+          </Pane>
+
+          <Pane className={cn(view === "markdown" && "hidden")} title="Preview">
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
+              <article
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
+                className="prose prose-sm prose-neutral dark:prose-invert max-w-none prose-headings:font-heading prose-headings:tracking-tight prose-a:underline-offset-4 prose-img:rounded-lg prose-pre:border prose-pre:bg-muted prose-pre:text-foreground prose-code:before:content-none prose-code:after:content-none"
+              />
+            </div>
+          </Pane>
+        </main>
+      )}
+
+      <Toaster />
+    </div>
+  )
 }

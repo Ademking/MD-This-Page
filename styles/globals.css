@@ -1,0 +1,202 @@
+/* Shark UI theme (https://shark-ui.com) - generated from the @shark/style registry item */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/hanken-grotesk";
+@import "@fontsource-variable/jetbrains-mono";
+
+@plugin "@tailwindcss/typography";
+
+@source "../components";
+@source "../tabs";
+@source "../options.tsx";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.5rem;
+  --background: var(--color-neutral-50);
+  --foreground: var(--color-neutral-800);
+  --card: var(--color-neutral-50);
+  --card-foreground: var(--color-neutral-800);
+  --popover: var(--color-neutral-50);
+  --popover-foreground: var(--color-neutral-800);
+  --primary: var(--color-neutral-800);
+  --primary-foreground: var(--color-neutral-50);
+  --secondary: color-mix(in srgb, var(--color-neutral-950) 6%, var(--background));
+  --secondary-foreground: var(--color-neutral-800);
+  --muted: color-mix(in srgb, var(--color-neutral-950) 6%, var(--background));
+  --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 80%, var(--color-neutral-950));
+  --accent: color-mix(in srgb, var(--color-neutral-950) 6%, var(--background));
+  --accent-foreground: var(--color-neutral-800);
+  --destructive: var(--color-red-500);
+  --destructive-foreground: var(--color-red-700);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-blue-700);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-700);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-700);
+  --border: color-mix(in srgb, var(--color-neutral-950) 12%, var(--background));
+  --input: color-mix(in srgb, var(--color-neutral-950) 13%, var(--background));
+  --ring: var(--color-neutral-400);
+  --sidebar: var(--color-neutral-50);
+  --sidebar-foreground: color-mix(in srgb, var(--color-neutral-800) 64%, var(--sidebar));
+  --sidebar-primary: var(--color-neutral-800);
+  --sidebar-primary-foreground: var(--color-neutral-50);
+  --sidebar-accent: color-mix(in srgb, var(--color-neutral-950) 6%, var(--sidebar));
+  --sidebar-accent-foreground: var(--color-neutral-800);
+  --sidebar-border: color-mix(in srgb, var(--color-neutral-950) 11%, var(--sidebar));
+  --sidebar-ring: var(--color-neutral-400);
+  --chart-1: var(--color-orange-600);
+  --chart-2: var(--color-teal-600);
+  --chart-3: var(--color-cyan-900);
+  --chart-4: var(--color-amber-400);
+  --chart-5: var(--color-amber-500);
+}
+
+.dark {
+  --background: var(--color-neutral-950);
+  --foreground: var(--color-neutral-100);
+  --card: color-mix(in srgb, var(--background) 98%, var(--color-neutral-50));
+  --card-foreground: var(--color-neutral-100);
+  --popover: color-mix(in srgb, var(--background) 96%, var(--color-neutral-50));
+  --popover-foreground: var(--color-neutral-100);
+  --primary: var(--color-neutral-100);
+  --primary-foreground: var(--color-neutral-800);
+  --secondary: color-mix(in srgb, var(--color-white) 10%, var(--background));
+  --secondary-foreground: var(--color-neutral-100);
+  --muted: color-mix(in srgb, var(--color-neutral-50) 10%, var(--background));
+  --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 70%, var(--color-neutral-50));
+  --accent: color-mix(in srgb, var(--color-neutral-50) 10%, var(--background));
+  --accent-foreground: var(--color-neutral-100);
+  --destructive: color-mix(in srgb, var(--color-red-600) 90%, var(--color-neutral-50));
+  --destructive-foreground: var(--color-red-400);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-blue-400);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-400);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-400);
+  --border: color-mix(in srgb, var(--color-neutral-50) 8%, var(--background));
+  --input: color-mix(in srgb, var(--color-neutral-50) 10%, var(--background));
+  --ring: var(--color-neutral-500);
+  --sidebar: color-mix(in srgb, var(--color-neutral-950) 97%, var(--color-neutral-50));
+  --sidebar-foreground: color-mix(in srgb, var(--color-neutral-100) 64%, var(--sidebar));
+  --sidebar-primary: var(--color-neutral-100);
+  --sidebar-primary-foreground: var(--color-neutral-800);
+  --sidebar-accent: color-mix(in srgb, var(--color-neutral-50) 10%, var(--sidebar));
+  --sidebar-accent-foreground: var(--color-neutral-100);
+  --sidebar-border: color-mix(in srgb, var(--color-neutral-50) 11%, var(--sidebar));
+  --sidebar-ring: var(--color-neutral-400);
+  --chart-1: var(--color-blue-700);
+  --chart-2: var(--color-emerald-500);
+  --chart-3: var(--color-amber-500);
+  --chart-4: var(--color-purple-500);
+  --chart-5: var(--color-rose-500);
+}
+
+@theme {
+  /* Tailwind's neutral scale uses achromatic oklch(L 0 none). Older Chromium
+     builds mix a "none" hue into color-mix(in srgb, ...) as a zero channel,
+     tinting Shark's surfaces yellow, so pin the scale to exact sRGB grays. */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a1a1a1;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+  --font-sans: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  ::selection {
+    @apply bg-primary/80 text-primary-foreground;
+  }
+  * {
+    @apply border-border outline-ring/50 ring-ring;
+  }
+  html {
+    @apply antialiased;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground flex min-h-svh flex-col font-sans;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Thin, theme-aware scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent)
+    transparent;
+}
+
+/* KaTeX: inherit the theme colour and keep wide equations scrollable */
+.katex {
+  color: inherit;
+}
+.katex-display {
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
+}

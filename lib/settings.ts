@@ -1,16 +1,21 @@
 import { DEFAULT_FORMAT_SETTINGS, type FormatSettings } from "~lib/format"
 
 export type QuickAction = "download" | "copy" | "copyPrompt"
+export type Theme = "system" | "light" | "dark"
 
 export interface Settings {
   oneClickEnabled: boolean
   oneClickAction: QuickAction
+  autoCopyPreview: boolean
+  theme: Theme
   format: FormatSettings
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   oneClickEnabled: false,
   oneClickAction: "copy",
+  autoCopyPreview: true,
+  theme: "system",
   format: DEFAULT_FORMAT_SETTINGS
 }
 
@@ -19,7 +24,7 @@ const STORAGE_KEY = "settings"
 export function getSettings(): Promise<Settings> {
   return new Promise((resolve) => {
     chrome.storage.sync.get([STORAGE_KEY], (result) => {
-      const stored = result[STORAGE_KEY] || {}
+      const stored = result?.[STORAGE_KEY] || {}
       resolve({
         ...DEFAULT_SETTINGS,
         ...stored,
