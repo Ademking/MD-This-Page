@@ -1,7 +1,7 @@
 {
   "name": "md-this-page",
   "displayName": ".MD this page",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Turn any web page into clean, LLM-ready Markdown in one click",
   "author": "Adem Kouki <ademkingnew@gmail.com>",
   "scripts": {
@@ -11,12 +11,12 @@
     "dev:firefox": "pnpm build:extractor && plasmo dev --target=firefox-mv3",
     "build": "pnpm build:extractor && plasmo build",
     "build:source": "pnpm build:extractor && plasmo build --source-maps",
-    "build:chrome": "pnpm build:extractor && plasmo build --target=chrome-mv3 --zip",
-    "build:firefox": "pnpm build:extractor && plasmo build --target=firefox-mv3 --zip --source-maps",
-    "build:edge": "pnpm build:extractor && plasmo build --target=edge-mv3 --zip",
+    "build:chrome": "pnpm build:extractor && plasmo build --target=chrome-mv3 && node scripts/zip.mjs chrome-mv3-prod",
+    "build:firefox": "pnpm build:extractor && plasmo build --target=firefox-mv3 --source-maps && node scripts/zip.mjs firefox-mv3-prod --with-maps",
+    "build:edge": "pnpm build:extractor && plasmo build --target=edge-mv3 && node scripts/zip.mjs edge-mv3-prod",
     "build:safari": "pnpm build:extractor && plasmo build --target=safari-mv3",
     "build:all": "pnpm run build:chrome && pnpm run build:firefox && pnpm run build:edge",
-    "package": "plasmo package",
+    "package": "node scripts/zip.mjs",
     "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {
@@ -47,6 +47,7 @@
     "acorn": "^8.18.0",
     "acorn-walk": "^8.3.5",
     "esbuild": "^0.28.2",
+    "fflate": "^0.8.3",
     "postcss": "^8.5.10",
     "prettier": "3.2.4",
     "tailwindcss": "4",
